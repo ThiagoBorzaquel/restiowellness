@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading Product… – Restio Wellness</title>
+  <meta name="description" content="Detailed review and analysis of top wellness products, with real customer ratings and Amazon pricing.">
+  <meta name="robots" content="index, follow">
+
+  <meta property="og:type"  content="product">
+  <meta property="og:title" content="Product Review – Restio Wellness">
+  <meta property="og:image" content="https://restiowellness.com/images/og-image.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" type="image/svg+xml" href="images/logo.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <img src="images/logo.svg" alt="Restio Wellness" width="180" height="40">
+    </a>
+    <nav class="site-nav">
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="category.html?category=sleep">Sleep</a>
+        <a href="category.html?category=stress">Stress</a>
+        <a href="category.html?category=energy">Energy</a>
+        <a href="category.html?category=focus">Focus</a>
+        <a href="about.html">About</a>
+      </div>
+      <a href="category.html" class="nav-cta">Shop All</a>
+    </nav>
+    <button class="hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-menu">
+  <div class="mobile-menu-header">
+    <img src="images/logo.svg" alt="Restio Wellness" height="36">
+    <button class="mobile-menu-close">✕</button>
+  </div>
+  <div class="mobile-nav-links">
+    <a href="index.html">Home</a>
+    <a href="category.html?category=sleep">Sleep</a>
+    <a href="category.html?category=stress">Stress</a>
+    <a href="category.html?category=energy">Energy</a>
+    <a href="category.html?category=focus">Focus</a>
+    <a href="category.html">All Products</a>
+  </div>
+</nav>
+
+<!-- ─── Dynamic Content ─── -->
+<div id="product-content">
+
+  <!-- Breadcrumb -->
+  <div style="background:white;border-bottom:1px solid var(--beige-mid);padding:12px 0">
+    <div class="container">
+      <div class="breadcrumb" id="product-breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        <span>Loading…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Hero -->
+  <section class="product-hero">
+    <div class="container">
+      <div id="product-hero">
+        <!-- Loading skeleton -->
+        <div class="product-hero-inner">
+          <div class="skeleton" style="aspect-ratio:1;border-radius:var(--radius-md)"></div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="skeleton" style="height:16px;width:100px"></div>
+            <div class="skeleton" style="height:32px;width:80%"></div>
+            <div class="skeleton" style="height:32px;width:60%"></div>
+            <div class="skeleton" style="height:20px;width:200px"></div>
+            <div class="skeleton" style="height:52px;border-radius:8px"></div>
+            <div class="skeleton" style="height:52px;border-radius:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Affiliate Notice -->
+  <div class="container">
+    <div class="affiliate-notice">
+      ⓘ <strong>Affiliate Disclosure:</strong> This page contains Amazon affiliate links.
+      We may earn a commission if you purchase through our links, at no extra cost to you.
+      <a href="privacy-policy.html">Learn more</a>.
+    </div>
+  </div>
+
+  <!-- Product Description -->
+  <section class="product-description">
+    <div class="container" id="product-description">
+      <div class="product-description-inner">
+        <div class="skeleton" style="height:400px;border-radius:12px"></div>
+        <div class="skeleton" style="height:300px;border-radius:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq-section">
+    <div class="container">
+      <div class="section-header fade-in">
+        <div class="section-label" style="justify-content:center">Common Questions</div>
+        <h2>Frequently Asked Questions</h2>
+      </div>
+      <div class="faq-list" id="product-faq"></div>
+    </div>
+  </section>
+
+  <!-- Related Products -->
+  <section style="background:var(--beige-pale)">
+    <div class="container">
+      <div class="section-header fade-in">
+        <div class="section-label" style="justify-content:center">You May Also Like</div>
+        <h2>Related Products</h2>
+      </div>
+      <div class="products-grid" id="related-products"></div>
+    </div>
+  </section>
+
+</div><!-- end #product-content -->
+
+<!-- ─── Footer ─── -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="images/logo.svg" alt="Restio Wellness" height="36">
+        <p>Restio Wellness helps you discover the best products for sleep, stress, energy, and focus.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Categories</h5>
+        <ul>
+          <li><a href="category.html?category=sleep">Sleep</a></li>
+          <li><a href="category.html?category=stress">Stress Relief</a></li>
+          <li><a href="category.html?category=energy">Energy</a></li>
+          <li><a href="category.html?category=focus">Focus</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="privacy-policy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="privacy-policy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms of Use</a></li>
+          <li><a href="cookies.html">Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-disclaimer">Restio Wellness is a participant in the Amazon Services LLC Associates Program. As an Amazon Associate we earn from qualifying purchases.</p>
+      <p class="footer-copy">© 2025 Restio Wellness. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<div class="cookie-banner" id="cookie-banner">
+  <div class="cookie-text">
+    <p>We use cookies to improve your experience. <a href="cookies.html">Cookie Policy</a>.</p>
+  </div>
+  <div class="cookie-actions">
+    <button class="cookie-accept" id="cookie-accept">Accept</button>
+    <button class="cookie-reject" id="cookie-reject">Decline</button>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/product.js"></script>
+</body>
+</html>

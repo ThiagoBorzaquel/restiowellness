@@ -1,0 +1,9 @@
+# GitHub Pages — Jekyll config
+# No special config needed for a static HTML site.
+# This file ensures GitHub Pages serves all files including those starting with _
+
+# Optionally exclude the scripts folder from Jekyll processing:
+exclude:
+  - scripts/
+  - "*.py"
+  - README.md

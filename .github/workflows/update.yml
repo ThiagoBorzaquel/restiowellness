@@ -1,0 +1,91 @@
+name: 🌿 Daily Product Update
+
+on:
+  # Run every day at 06:00 UTC
+  schedule:
+    - cron: '0 6 * * *'
+
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-products:
+    name: Update products.json
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout repository ──
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Set up Python ──
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ── 3. Install dependencies ──
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Uncomment below when using Amazon PA-API:
+          # pip install python-amazon-paapi requests
+          echo "Dependencies installed."
+
+      # ── 4. Run product updater ──
+      - name: Run update_products.py
+        env:
+          # Add your Amazon PA-API credentials as GitHub Secrets
+          # when you're ready to use live data:
+          # AMAZON_ACCESS_KEY: ${{ secrets.AMAZON_ACCESS_KEY }}
+          # AMAZON_SECRET_KEY: ${{ secrets.AMAZON_SECRET_KEY }}
+          AFFILIATE_TAG: restio-20
+        run: |
+          python scripts/update_products.py
+
+      # ── 5. Update sitemap dates ──
+      - name: Update sitemap lastmod dates
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          # Update all lastmod dates to today's date
+          sed -i "s|<lastmod>[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}</lastmod>|<lastmod>${TODAY}</lastmod>|g" sitemap.xml
+          echo "Sitemap updated with date: $TODAY"
+
+      # ── 6. Check for changes ──
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet data/products.json sitemap.xml && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      # ── 7. Commit & push if changed ──
+      - name: Commit and push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --global user.name  "Restio Bot"
+          git config --global user.email "bot@restiowellness.com"
+          git add data/products.json sitemap.xml
+          git commit -m "🤖 Auto-update: products & sitemap [$(date +%Y-%m-%d)]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 8. Skip message if no changes ──
+      - name: No changes detected
+        if: steps.changes.outputs.changed == 'false'
+        run: echo "✅ No changes in products.json or sitemap.xml. Nothing to commit."
+
+      # ── 9. Summary ──
+      - name: Job summary
+        run: |
+          echo "## 🌿 Restio Wellness — Product Update" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Run date | $(date '+%Y-%m-%d %H:%M UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Products file | \`data/products.json\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Changes committed | ${{ steps.changes.outputs.changed }} |" >> $GITHUB_STEP_SUMMARY

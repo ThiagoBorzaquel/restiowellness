@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Disallow admin or system folders (precautionary)
+Disallow: /scripts/
+Disallow: /.github/
+
+# Sitemap location
+Sitemap: https://restiowellness.com/sitemap.xml
+
+# Crawl-delay for polite bots
+Crawl-delay: 5
