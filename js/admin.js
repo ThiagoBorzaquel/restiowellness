@@ -63,7 +63,7 @@ function createEmptyManualProduct() {
 }
 
 function getMode() {
-  return adminState.settings.updateMode === "manual" ? "manual" : "auto";
+  return adminState.settings.updateMode ===  "manual";
 }
 
 function getAutoPreviewState() {
@@ -74,7 +74,7 @@ function getAutoPreviewState() {
 }
 
 function getActiveCatalog() {
-  return ProductCatalog.applyAdminStateToProducts(baseCatalog, adminState);
+  return adminState.manualCatalog;
 }
 
 function getVisibleCatalog() {
@@ -520,5 +520,37 @@ async function initAdminDashboard() {
       '<div class="admin-help">Não foi possível carregar o catálogo agora. Verifique o arquivo de produtos e tente novamente.</div>';
   }
 }
+
+async function saveToGitHub(products) {
+  const token = "SEU_TOKEN";
+  const repo = "seu-repo";
+  const path = "data/products.json";
+
+  const content = btoa(JSON.stringify(products, null, 2));
+
+  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+    method: "PUT",
+    headers: {
+      "Authorization": `token ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: "update products",
+      content: content
+    })
+  });
+
+  return res.json();
+}
+
+document.getElementById("save-to-server").addEventListener("click", async () => {
+  try {
+    await saveToGitHub(adminState.manualCatalog);
+    alert("✅ Atualizado no site com sucesso!");
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao salvar no GitHub");
+  }
+});
 
 document.addEventListener("DOMContentLoaded", initAdminDashboard);
