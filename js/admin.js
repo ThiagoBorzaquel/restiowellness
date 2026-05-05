@@ -523,24 +523,40 @@ async function initAdminDashboard() {
 
 async function saveToGitHub(products) {
   const token = "SEU_TOKEN";
-  const repo = "seu-repo";
+  const owner = "SEU_USUARIO";
+  const repo = "SEU_REPO";
   const path = "data/products.json";
 
-  const content = btoa(JSON.stringify(products, null, 2));
+  const getFile = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+    headers: {
+      Authorization: `token ${token}`
+    }
+  });
 
-  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+  const fileData = await getFile.json();
+  console.log("FILE DATA:", fileData);
+
+  const sha = fileData.sha;
+
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
+
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
     method: "PUT",
     headers: {
-      "Authorization": `token ${token}`,
+      Authorization: `token ${token}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      message: "update products",
-      content: content
+      message: "update products via admin",
+      content: content,
+      sha: sha
     })
   });
 
-  return res.json();
+  const result = await res.json();
+  console.log("GITHUB RESPONSE:", result);
+
+  return result;
 }
 
 document.getElementById("save-to-server").addEventListener("click", async () => {
@@ -552,5 +568,7 @@ document.getElementById("save-to-server").addEventListener("click", async () => 
     alert("Erro ao salvar no GitHub");
   }
 });
+
+console.log("BOTÃO CLICADO");
 
 document.addEventListener("DOMContentLoaded", initAdminDashboard);
