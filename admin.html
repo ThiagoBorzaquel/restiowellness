@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Administrativo - Restio Wellness</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/svg+xml" href="images/logo.svg">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/fixes.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo" aria-label="Restio Wellness Home">
+      <img src="images/logo.svg" alt="Restio Wellness" width="180" height="40">
+    </a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="category.html?category=sleep">Sleep</a>
+        <a href="category.html?category=stress">Stress</a>
+        <a href="category.html?category=energy">Energy</a>
+        <a href="category.html?category=focus">Focus</a>
+        <a href="about.html">About</a>
+      </div>
+      <a href="admin.html" class="nav-cta">Dashboard</a>
+    </nav>
+    <button class="hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-menu" aria-label="Mobile navigation">
+  <div class="mobile-menu-header">
+    <img src="images/logo.svg" alt="Restio Wellness" height="36">
+    <button class="mobile-menu-close" aria-label="Close menu">x</button>
+  </div>
+  <div class="mobile-nav-links">
+    <a href="index.html">Home</a>
+    <a href="category.html?category=sleep">Sleep</a>
+    <a href="category.html?category=stress">Stress</a>
+    <a href="category.html?category=energy">Energy</a>
+    <a href="category.html?category=focus">Focus</a>
+    <a href="about.html">About</a>
+    <a href="admin.html">Dashboard</a>
+  </div>
+</nav>
+
+<section class="admin-hero">
+  <div class="container container--wide">
+    <div class="section-label">Administração</div>
+    <h1>Gerencie produtos, links e modo de atualização</h1>
+    <p>
+      Use o painel para controlar o catálogo do site, alternar entre atualização automática e manual,
+      editar anúncios completos e corrigir imagens e links sem mexer diretamente nos arquivos.
+    </p>
+  </div>
+</section>
+
+<main class="admin-page">
+  <div class="container container--wide">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <section class="admin-card">
+          <div class="admin-card-head">
+            <h2>Modo de Atualização</h2>
+            <span class="admin-status-pill" id="admin-mode-pill">Carregando</span>
+          </div>
+          <div class="admin-mode-toggle" id="admin-mode-toggle">
+            <label class="admin-mode-option">
+              <input type="radio" name="updateMode" value="auto">
+              <span>Automática</span>
+            </label>
+            <label class="admin-mode-option">
+              <input type="radio" name="updateMode" value="manual">
+              <span>Manual</span>
+            </label>
+          </div>
+          <p class="admin-help" id="admin-mode-help"></p>
+          <div class="admin-actions-stack">
+            <button class="btn btn-secondary" type="button" id="admin-sync-manual">Sincronizar catálogo manual</button>
+            <button class="btn btn-secondary" type="button" id="admin-export-json">Exportar catálogo atual</button>
+          </div>
+        </section>
+
+        <section class="admin-card">
+          <div class="admin-card-head">
+            <h2>Produtos</h2>
+            <span id="admin-count" class="admin-meta">0 itens</span>
+          </div>
+          <div class="admin-toolbar">
+            <input id="admin-search" class="admin-search" type="search" placeholder="Buscar por título, categoria ou ID">
+            <button class="btn btn-primary" type="button" id="admin-add-product">Novo produto</button>
+          </div>
+          <div class="admin-products-list" id="admin-products-list"></div>
+        </section>
+      </aside>
+
+      <section class="admin-editor">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <div>
+              <h2 id="admin-editor-title">Editor de produto</h2>
+              <p class="admin-help" id="admin-editor-help">
+                Selecione um produto na lista para editar.
+              </p>
+            </div>
+            <span class="admin-status-pill admin-status-pill--soft" id="admin-editor-mode">Auto</span>
+          </div>
+
+          <div class="admin-preview-shell">
+            <div class="admin-preview-media">
+              <img id="admin-preview-image" src="" alt="Prévia do produto">
+            </div>
+            <div class="admin-preview-copy">
+              <div class="admin-preview-badge" id="admin-preview-badge">Sem badge</div>
+              <h3 id="admin-preview-title">Selecione um produto</h3>
+              <p id="admin-preview-description">A prévia do anúncio aparece aqui enquanto você edita.</p>
+              <div class="admin-preview-price" id="admin-preview-price">--</div>
+              <div class="admin-preview-link" id="admin-preview-link">Link ainda não definido.</div>
+            </div>
+          </div>
+
+          <form id="admin-form" class="admin-form" autocomplete="off">
+            <div class="admin-form-grid">
+              <label class="admin-field">
+                <span>ID / ASIN</span>
+                <input type="text" name="asin" id="admin-asin" required>
+              </label>
+
+              <label class="admin-field">
+                <span>Categoria</span>
+                <select name="category" id="admin-category">
+                  <option value="sleep">Sleep</option>
+                  <option value="stress">Stress</option>
+                  <option value="energy">Energy</option>
+                  <option value="focus">Focus</option>
+                </select>
+              </label>
+
+              <label class="admin-field admin-field--full">
+                <span>Título</span>
+                <input type="text" name="title" id="admin-title" required>
+              </label>
+
+              <label class="admin-field admin-field--full">
+                <span>Descrição</span>
+                <textarea name="generated_description" id="admin-description" rows="6"></textarea>
+              </label>
+
+              <label class="admin-field admin-field--full">
+                <span>Link do produto</span>
+                <input type="url" name="affiliate_link" id="admin-link" placeholder="https://www.amazon.com/dp/...">
+              </label>
+
+              <label class="admin-field">
+                <span>Preço</span>
+                <input type="text" name="price" id="admin-price" placeholder="$29.99">
+              </label>
+
+              <label class="admin-field">
+                <span>Badge</span>
+                <select name="badge" id="admin-badge">
+                  <option value="">Sem badge</option>
+                  <option value="Best Seller">Best Seller</option>
+                  <option value="Top Rated">Top Rated</option>
+                </select>
+              </label>
+
+              <label class="admin-field">
+                <span>Nota</span>
+                <input type="number" name="rating" id="admin-rating" step="0.1" min="0" max="5">
+              </label>
+
+              <label class="admin-field">
+                <span>Reviews</span>
+                <input type="number" name="reviews" id="admin-reviews" min="0" step="1">
+              </label>
+
+              <label class="admin-field admin-field--full">
+                <span>URL da imagem</span>
+                <input type="url" name="image" id="admin-image" placeholder="https://...">
+              </label>
+
+              <div class="admin-field admin-field--full">
+                <span>Upload de imagem</span>
+                <div class="admin-upload-row">
+                  <input type="file" id="admin-image-upload" accept="image/*">
+                  <button class="btn btn-secondary" type="button" id="admin-clear-upload">Remover upload</button>
+                </div>
+                <input type="hidden" name="cached_image" id="admin-cached-image">
+              </div>
+
+              <label class="admin-field admin-field--full">
+                <span>Features (uma por linha)</span>
+                <textarea name="features" id="admin-features" rows="6"></textarea>
+              </label>
+            </div>
+
+            <div class="admin-form-actions">
+              <button class="btn btn-primary" type="submit" id="admin-save">Salvar</button>
+              <button class="btn btn-secondary" type="button" id="admin-reset">Recarregar dados</button>
+              <button class="btn btn-secondary admin-danger" type="button" id="admin-delete">Excluir produto</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="images/logo.svg" alt="Restio Wellness" height="36">
+        <p>Dashboard local para controle do catálogo, links e conteúdo do site Restio Wellness.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Site</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="category.html">Produtos</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Gestão</h5>
+        <ul>
+          <li><a href="admin.html">Dashboard</a></li>
+          <li><a href="privacy-policy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Status</h5>
+        <ul>
+          <li><span id="admin-footer-mode">Modo: --</span></li>
+          <li><span id="admin-footer-count">Produtos: --</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

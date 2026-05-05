@@ -8,8 +8,10 @@ const AFFILIATE_TAG = "restiowellness-20";
 const PRODUCTS_URL = "data/products.json";
 const BACKUP_PRODUCTS_URL = "data/products.last-good.json";
 const PRODUCTS_STORAGE_KEY = "rw_products_cache_v3";
+const ADMIN_STATE_STORAGE_KEY = "rw_admin_dashboard_v1";
 
 let productsPromise = null;
+let sourceProductsPromise = null;
 
 const CATEGORY_IMAGE_THEME = {
   sleep: {
@@ -162,38 +164,70 @@ function buildAmazonSearchLink(product) {
   const params = new URLSearchParams({
     k: title,
     tag: AFFILIATE_TAG,
-    language: "en_US",
   });
   return `https://www.amazon.com/s?${params.toString()}`;
 }
 
-function buildAmazonProductLink(product) {
-  const asin = String(product?.asin || "").trim();
-  if (!asin) {
-    return buildAmazonSearchLink(product);
+function extractAmazonAsin(link) {
+  const raw = String(link || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  const directMatch = raw.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/i);
+  if (directMatch) {
+    return directMatch[1].toUpperCase();
+  }
+
+  const nestedMatch = raw.match(/\/([A-Z0-9]{10})(?:[/?]|$)/i);
+  if (nestedMatch) {
+    return nestedMatch[1].toUpperCase();
+  }
+
+  return "";
+}
+
+function buildAmazonProductLink(productOrAsin) {
+  const asin =
+    typeof productOrAsin === "string"
+      ? extractAmazonAsin(productOrAsin) || String(productOrAsin).trim()
+      : String(productOrAsin?.asin || "").trim();
+  const normalizedAsin = asin.toUpperCase();
+  if (!normalizedAsin || !/^[A-Z0-9]{10}$/.test(normalizedAsin)) {
+    return buildAmazonSearchLink(productOrAsin);
   }
 
   const params = new URLSearchParams({
     tag: AFFILIATE_TAG,
-    language: "en_US",
   });
-  return `https://www.amazon.com/dp/${encodeURIComponent(asin)}?${params.toString()}`;
+  return `https://www.amazon.com/dp/${encodeURIComponent(normalizedAsin)}?${params.toString()}`;
 }
 
 function normalizeAmazonLink(link, product) {
-  if (!link) {
-    return buildAmazonSearchLink(product);
-  }
-
   try {
+    if (!link) {
+      return product?.asin ? buildAmazonProductLink(product) : buildAmazonSearchLink(product);
+    }
+
     const url = new URL(link);
     if (!url.hostname.includes("amazon.")) {
-      return buildAmazonSearchLink(product);
+      return url.toString();
     }
+
+    const asin = extractAmazonAsin(url.toString()) || String(product?.asin || "").trim();
+    if (asin) {
+      return buildAmazonProductLink(asin);
+    }
+
     url.searchParams.set("tag", AFFILIATE_TAG);
+    url.searchParams.delete("language");
     return url.toString();
   } catch {
-    return buildAmazonSearchLink(product);
+    const asin = extractAmazonAsin(link) || String(product?.asin || "").trim();
+    if (asin) {
+      return buildAmazonProductLink(asin);
+    }
+    return String(link || "").trim() || buildAmazonSearchLink(product);
   }
 }
 
@@ -214,8 +248,18 @@ function normalizeAmazonAnchors(scope = document) {
 }
 
 function buildAmazonLinkForProduct(product) {
+  if (product?.affiliate_link) {
+    const explicitLink = String(product.affiliate_link).trim();
+    if (explicitLink) {
+      if (explicitLink.includes("amazon.")) {
+        return normalizeAmazonLink(explicitLink, product);
+      }
+      return explicitLink;
+    }
+  }
+
   if (product?.asin) {
-    return normalizeAmazonLink(buildAmazonProductLink(product), product);
+    return buildAmazonProductLink(product);
   }
 
   if (product?.amazon_link_mode === "search" && product?.affiliate_link) {
@@ -332,6 +376,109 @@ function normalizeProducts(products) {
     .filter((product) => product.asin && product.title);
 }
 
+function cloneProducts(products) {
+  return normalizeProducts(JSON.parse(JSON.stringify(products || [])));
+}
+
+function createDefaultAdminState() {
+  return {
+    settings: {
+      updateMode: "auto",
+    },
+    linkOverrides: {},
+    manualCatalog: [],
+    updatedAt: null,
+  };
+}
+
+function normalizeLinkOverrides(linkOverrides) {
+  if (!linkOverrides || typeof linkOverrides !== "object") {
+    return {};
+  }
+
+  return Object.entries(linkOverrides).reduce((result, [asin, link]) => {
+    const productId = String(asin || "").trim();
+    const value = String(link || "").trim();
+    if (productId && value) {
+      result[productId] = value;
+    }
+    return result;
+  }, {});
+}
+
+function readAdminState() {
+  try {
+    const raw = window.localStorage.getItem(ADMIN_STATE_STORAGE_KEY);
+    if (!raw) {
+      return createDefaultAdminState();
+    }
+
+    const parsed = JSON.parse(raw);
+    return {
+      settings: {
+        updateMode: parsed?.settings?.updateMode === "manual" ? "manual" : "auto",
+      },
+      linkOverrides: normalizeLinkOverrides(parsed?.linkOverrides),
+      manualCatalog: normalizeProducts(parsed?.manualCatalog || []),
+      updatedAt: typeof parsed?.updatedAt === "string" ? parsed.updatedAt : null,
+    };
+  } catch {
+    return createDefaultAdminState();
+  }
+}
+
+function writeAdminState(state) {
+  const safeState = {
+    settings: {
+      updateMode: state?.settings?.updateMode === "manual" ? "manual" : "auto",
+    },
+    linkOverrides: normalizeLinkOverrides(state?.linkOverrides),
+    manualCatalog: normalizeProducts(state?.manualCatalog || []),
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    window.localStorage.setItem(ADMIN_STATE_STORAGE_KEY, JSON.stringify(safeState));
+  } catch {
+    /* localStorage can be blocked; ignore */
+  }
+
+  return safeState;
+}
+
+function createManualCatalog(products) {
+  return cloneProducts(products);
+}
+
+function applyAdminStateToProducts(products, state = readAdminState()) {
+  const normalizedProducts = normalizeProducts(products);
+  if (state.settings.updateMode === "manual" && state.manualCatalog.length) {
+    return cloneProducts(state.manualCatalog);
+  }
+
+  if (!Object.keys(state.linkOverrides).length) {
+    return normalizedProducts;
+  }
+
+  return normalizedProducts.map((product) => {
+    const overriddenLink = state.linkOverrides[product.asin];
+    if (!overriddenLink) {
+      return product;
+    }
+
+    const normalizedLink = overriddenLink.includes("amazon.")
+      ? normalizeAmazonLink(overriddenLink, product)
+      : overriddenLink;
+
+    return normalizeProduct({
+      ...product,
+      affiliate_link: normalizedLink,
+      amazon_link_mode: extractAmazonAsin(normalizedLink) ? "dp" : "search",
+      direct_link_verified: Boolean(extractAmazonAsin(normalizedLink)),
+    });
+  });
+}
+
 function readProductsFromStorage() {
   try {
     const raw = window.localStorage.getItem(PRODUCTS_STORAGE_KEY);
@@ -372,9 +519,18 @@ async function fetchProductsFromUrl(url) {
   return data;
 }
 
-async function loadProductCatalog() {
-  if (!productsPromise) {
-    productsPromise = (async () => {
+function resetProductCatalogCache() {
+  productsPromise = null;
+  sourceProductsPromise = null;
+}
+
+async function loadSourceProductCatalog(forceReload = false) {
+  if (forceReload) {
+    sourceProductsPromise = null;
+  }
+
+  if (!sourceProductsPromise) {
+    sourceProductsPromise = (async () => {
       try {
         const liveProducts = await fetchProductsFromUrl(PRODUCTS_URL);
         writeProductsToStorage(liveProducts);
@@ -394,6 +550,24 @@ async function loadProductCatalog() {
         }
         throw liveError;
       }
+    })().catch((error) => {
+      sourceProductsPromise = null;
+      throw error;
+    });
+  }
+
+  return sourceProductsPromise;
+}
+
+async function loadProductCatalog(forceReload = false) {
+  if (forceReload) {
+    productsPromise = null;
+  }
+
+  if (!productsPromise) {
+    productsPromise = (async () => {
+      const sourceProducts = await loadSourceProductCatalog(forceReload);
+      return applyAdminStateToProducts(sourceProducts);
     })().catch((error) => {
       productsPromise = null;
       throw error;
@@ -677,14 +851,24 @@ window.RestioProducts = {
   buildStarsHTML,
   buildProductCard,
   buildProductDetailLink,
+  extractAmazonAsin,
   buildAmazonProductLink,
   buildAmazonLinkForProduct,
   buildProductImageSrc,
   buildProductFallbackImage,
+  createDefaultAdminState,
+  createManualCatalog,
+  readAdminState,
+  writeAdminState,
+  applyAdminStateToProducts,
+  loadSourceProductCatalog,
   loadProductCatalog,
+  resetProductCatalogCache,
   loadProducts,
   normalizeAmazonLink,
   normalizeAmazonAnchors,
+  normalizeProduct,
+  normalizeProducts,
   enhanceDynamicContent,
 };
 
