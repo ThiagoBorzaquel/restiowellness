@@ -63,7 +63,7 @@ function createEmptyManualProduct() {
 }
 
 function getMode() {
-  return adminState.settings.updateMode ===  "manual";
+  return "manual";
 }
 
 function getAutoPreviewState() {
@@ -259,8 +259,8 @@ function renderForm() {
   setFieldState("reviews", !manualMode);
   setFieldState("image", !manualMode);
   setFieldState("features", !manualMode);
-  adminRefs.imageUpload.disabled = !manualMode;
-  adminRefs.clearUploadButton.disabled = !manualMode;
+  adminRefs.imageUpload.disabled = false;
+  adminRefs.clearUploadButton.disabled = false;
 
   adminRefs.editorTitle.textContent = manualMode
     ? `Editando ${product.title}`
@@ -521,53 +521,26 @@ async function initAdminDashboard() {
   }
 }
 
-async function saveToGitHub(products) {
-  const token = "SEU_TOKEN";
-  const owner = "SEU_USUARIO";
-  const repo = "SEU_REPO";
-  const path = "data/products.json";
 
-  const getFile = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-    headers: {
-      Authorization: `token ${token}`
-    }
-  });
 
-  const fileData = await getFile.json();
-  console.log("FILE DATA:", fileData);
 
-  const sha = fileData.sha;
+function downloadProducts() {
+  const data = adminState.manualCatalog || [];
 
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
+  const json = JSON.stringify(data, null, 2);
 
-  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `token ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message: "update products via admin",
-      content: content,
-      sha: sha
-    })
-  });
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
 
-  const result = await res.json();
-  console.log("GITHUB RESPONSE:", result);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "products.json";
+  a.click();
 
-  return result;
+  URL.revokeObjectURL(url);
+
+  alert("Arquivo baixado! Substitua em /data/products.json");
 }
-
-document.getElementById("save-to-server").addEventListener("click", async () => {
-  try {
-    await saveToGitHub(adminState.manualCatalog);
-    alert("✅ Atualizado no site com sucesso!");
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao salvar no GitHub");
-  }
-});
 
 console.log("BOTÃO CLICADO");
 
