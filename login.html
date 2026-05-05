@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Administrativo - Restio Wellness</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/svg+xml" href="images/logo.svg">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/fixes.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body class="login-body">
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo" aria-label="Restio Wellness Home">
+      <img src="images/logo.svg" alt="Restio Wellness" width="180" height="40">
+    </a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+      </div>
+      <a href="index.html" class="nav-cta">Voltar ao site</a>
+    </nav>
+  </div>
+</header>
+
+<main class="login-page">
+  <div class="login-shell">
+
+    <!-- ============ STEP 1: LOGIN ============ -->
+    <section class="login-card" id="step-login" data-step="login">
+      <div class="login-head">
+        <div class="login-eyebrow">Acesso restrito</div>
+        <h1>Entrar no Dashboard</h1>
+        <p>Use suas credenciais administrativas para gerenciar o catálogo, links e modo de atualização.</p>
+      </div>
+
+      <form id="login-form" class="login-form" novalidate autocomplete="on">
+        <label class="login-field">
+          <span>E-mail</span>
+          <input type="email" id="login-email" name="email" required autocomplete="username" placeholder="voce@restiowellness.com">
+        </label>
+
+        <label class="login-field">
+          <span>Senha</span>
+          <div class="login-password-wrap">
+            <input type="password" id="login-password" name="password" required autocomplete="current-password" placeholder="••••••••" minlength="6">
+            <button type="button" class="login-toggle" data-toggle="login-password" aria-label="Mostrar senha">👁</button>
+          </div>
+        </label>
+
+        <div class="login-row">
+          <label class="login-check">
+            <input type="checkbox" id="login-remember">
+            <span>Lembrar este dispositivo por 30 dias</span>
+          </label>
+          <button type="button" class="login-link" data-go="step-forgot">Esqueci minha senha</button>
+        </div>
+
+        <button type="submit" class="login-btn login-btn--primary">Entrar</button>
+
+        <div class="login-feedback" id="login-feedback" role="alert" aria-live="polite"></div>
+      </form>
+
+      <div class="login-footer-note">
+        <strong>Primeiro acesso?</strong>
+        Use o e-mail e senha definidos no arquivo <code>js/login.js</code>
+        e configure o 2FA logo após o primeiro login.
+      </div>
+    </section>
+
+    <!-- ============ STEP 2: 2FA ============ -->
+    <section class="login-card hidden" id="step-2fa" data-step="2fa">
+      <div class="login-head">
+        <div class="login-eyebrow">Verificação em duas etapas</div>
+        <h1>Digite o código de 6 dígitos</h1>
+        <p>Abra seu aplicativo autenticador (Google Authenticator, Authy, 1Password) e informe o código atual.</p>
+      </div>
+
+      <form id="twofa-form" class="login-form" novalidate>
+        <div class="otp-wrap" id="otp-wrap" aria-label="Código de 6 dígitos">
+          <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" class="otp-input" autocomplete="one-time-code">
+          <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" class="otp-input">
+          <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" class="otp-input">
+          <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" class="otp-input">
+          <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" class="otp-input">
+          <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" class="otp-input">
+        </div>
+
+        <button type="submit" class="login-btn login-btn--primary">Verificar código</button>
+
+        <div class="login-feedback" id="twofa-feedback" role="alert" aria-live="polite"></div>
+
+        <div class="login-row login-row--center">
+          <button type="button" class="login-link" data-go="step-login">← Voltar ao login</button>
+          <button type="button" class="login-link" data-go="step-setup-2fa">Configurar novo 2FA</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ STEP 3: SETUP 2FA ============ -->
+    <section class="login-card hidden" id="step-setup-2fa" data-step="setup-2fa">
+      <div class="login-head">
+        <div class="login-eyebrow">Configurar 2FA</div>
+        <h1>Escaneie o QR Code</h1>
+        <p>Abra seu app autenticador, escaneie o QR Code abaixo (ou cole o segredo manualmente) e digite o código gerado para concluir a ativação.</p>
+      </div>
+
+      <div class="setup-grid">
+        <div class="setup-qr">
+          <img id="setup-qr-img" alt="QR Code do 2FA" width="200" height="200">
+        </div>
+        <div class="setup-info">
+          <label class="login-field">
+            <span>Segredo (manual)</span>
+            <div class="login-password-wrap">
+              <input type="text" id="setup-secret" readonly>
+              <button type="button" class="login-toggle" id="setup-copy" aria-label="Copiar">📋</button>
+            </div>
+          </label>
+          <p class="setup-help">Conta: <code id="setup-account">admin@restiowellness.com</code></p>
+        </div>
+      </div>
+
+      <form id="setup-form" class="login-form">
+        <label class="login-field">
+          <span>Código gerado pelo app</span>
+          <input type="text" id="setup-code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required>
+        </label>
+        <button type="submit" class="login-btn login-btn--primary">Ativar 2FA</button>
+        <div class="login-feedback" id="setup-feedback" role="alert" aria-live="polite"></div>
+        <div class="login-row login-row--center">
+          <button type="button" class="login-link" data-go="step-login">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ STEP 4: FORGOT ============ -->
+    <section class="login-card hidden" id="step-forgot" data-step="forgot">
+      <div class="login-head">
+        <div class="login-eyebrow">Recuperação</div>
+        <h1>Recuperar senha</h1>
+        <p>Informe o e-mail administrativo. Você receberá instruções com um link/código de recuperação.</p>
+      </div>
+
+      <form id="forgot-form" class="login-form" novalidate>
+        <label class="login-field">
+          <span>E-mail</span>
+          <input type="email" id="forgot-email" required placeholder="voce@restiowellness.com">
+        </label>
+
+        <button type="submit" class="login-btn login-btn--primary">Enviar instruções</button>
+        <div class="login-feedback" id="forgot-feedback" role="alert" aria-live="polite"></div>
+
+        <div class="login-row login-row--center">
+          <button type="button" class="login-link" data-go="step-login">← Voltar ao login</button>
+          <button type="button" class="login-link" data-go="step-reset">Já tenho um código</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ STEP 5: RESET ============ -->
+    <section class="login-card hidden" id="step-reset" data-step="reset">
+      <div class="login-head">
+        <div class="login-eyebrow">Nova senha</div>
+        <h1>Redefinir senha</h1>
+        <p>Cole o código de recuperação recebido e escolha uma nova senha forte (mínimo 8 caracteres).</p>
+      </div>
+
+      <form id="reset-form" class="login-form" novalidate>
+        <label class="login-field">
+          <span>Código de recuperação</span>
+          <input type="text" id="reset-code" required placeholder="XXXX-XXXX-XXXX" autocomplete="one-time-code">
+        </label>
+        <label class="login-field">
+          <span>Nova senha</span>
+          <div class="login-password-wrap">
+            <input type="password" id="reset-password" required minlength="8" autocomplete="new-password">
+            <button type="button" class="login-toggle" data-toggle="reset-password" aria-label="Mostrar senha">👁</button>
+          </div>
+        </label>
+        <label class="login-field">
+          <span>Confirmar senha</span>
+          <input type="password" id="reset-password2" required minlength="8" autocomplete="new-password">
+        </label>
+
+        <button type="submit" class="login-btn login-btn--primary">Salvar nova senha</button>
+        <div class="login-feedback" id="reset-feedback" role="alert" aria-live="polite"></div>
+
+        <div class="login-row login-row--center">
+          <button type="button" class="login-link" data-go="step-login">← Voltar ao login</button>
+        </div>
+      </form>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>© <span id="year"></span> Restio Wellness · Acesso administrativo protegido</p>
+  </div>
+</footer>
+
+<script src="js/login.js"></script>
+</body>
+</html>
