@@ -185,6 +185,11 @@
 
   // ====== INIT ======
   document.addEventListener("DOMContentLoaded", async () => {
+    // Só inicializa o fluxo de login se estivermos na página de login.
+    // (Evita loop de reload quando login.js é incluído em admin.html só para requireAuth.)
+    const isLoginPage = !!document.getElementById("step-login");
+    if (!isLoginPage) return;
+
     const yearEl = document.getElementById("year");
     if (yearEl) yearEl.textContent = new Date().getFullYear();
 
