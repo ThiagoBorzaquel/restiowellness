@@ -1,43 +1,48 @@
 #!/usr/bin/env python3
 """
-Restio Wellness — Product Updater
-===================================
-Fetches/simulates trending wellness products, generates
-persuasive AI-style descriptions, and saves products.json.
+Restio Wellness product updater.
 
-Usage:
-    python scripts/update_products.py
-
-Requires (for real Amazon data - optional):
-    pip install requests python-amazon-paapi
-
-GitHub Actions will run this daily and auto-commit changes.
+The updater is intentionally defensive:
+- keeps the current catalog as the live cache
+- writes a secondary last-good backup
+- prefers local cached images when remote images fail
+- falls back to Amazon search links when direct product links do not validate
+- preserves the previous product payload when a new candidate looks broken
 """
 
+from __future__ import annotations
+
+import datetime as dt
 import json
-import random
-import datetime
 import os
+import random
+import shutil
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+from typing import Dict, List, Optional
 
-# ──────────────────────────────────────────
-# CONFIGURATION
-# ──────────────────────────────────────────
 
-AFFILIATE_TAG  = "restio-20"
-OUTPUT_PATH    = os.path.join(os.path.dirname(__file__), "..", "data", "products.json")
-AMAZON_BASE    = "https://www.amazon.com/dp/{asin}?tag=" + AFFILIATE_TAG
+AFFILIATE_TAG = os.environ.get("AFFILIATE_TAG", "restiowellness-20").strip() or "restiowellness-20"
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+IMAGES_DIR = BASE_DIR / "images" / "products"
+OUTPUT_PATH = DATA_DIR / "products.json"
+BACKUP_PATH = DATA_DIR / "products.last-good.json"
+HTTP_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0 Safari/537.36"
+    )
+}
 
-# ──────────────────────────────────────────
-# PRODUCT CATALOG (seed data)
-# Add/remove products here as needed.
-# When Amazon PA-API is configured, ratings
-# and review counts update automatically.
-# ──────────────────────────────────────────
 
 PRODUCT_CATALOG = [
     {
         "asin": "B07X3X7X5K",
-        "title": "Manta Sleep Mask – 100% Blackout Eye Mask",
+        "title": "Manta Sleep Mask - 100% Blackout Eye Mask",
         "category": "sleep",
         "image": "https://images-na.ssl-images-amazon.com/images/I/71QZ3XQHOLL._AC_SL1500_.jpg",
         "base_rating": 4.5,
@@ -46,19 +51,19 @@ PRODUCT_CATALOG = [
         "price": "$35.99",
         "features": [
             "100% blackout with zero eye pressure",
-            "Adjustable eye cups fit any face shape",
+            "Adjustable eye cups fit most face shapes",
             "Ultra-soft memory foam padding",
-            "Machine washable & travel-friendly",
-            "Blocks 100% of light without pressing on eyelids"
+            "Machine washable and travel friendly",
+            "Blocks light without pressing on eyelids",
         ],
-        "problem": "struggling to get deep, restorative sleep due to light intrusion",
-        "hook": "Light intrusion is one of the top reasons people wake up groggy — the Manta Sleep Mask eliminates that completely.",
-        "benefit": "zero-pressure blackout that lets your eyes move freely in REM sleep",
-        "social_proof": "thousands of users report falling asleep faster and waking up genuinely rested for the first time in years"
+        "problem": "struggling to get deep, restorative sleep because light keeps breaking your rest",
+        "hook": "Light intrusion is one of the main reasons people wake up groggy, and this mask is built to remove that problem completely.",
+        "benefit": "zero-pressure blackout that lets your eyes move freely during REM sleep",
+        "social_proof": "thousands of customers report falling asleep faster and waking up genuinely rested",
     },
     {
         "asin": "B08HJXS7VM",
-        "title": "URPOWER Essential Oil Diffuser – 500ml Aromatherapy Humidifier",
+        "title": "URPOWER Essential Oil Diffuser - 500ml Aromatherapy Humidifier",
         "category": "stress",
         "image": "https://images-na.ssl-images-amazon.com/images/I/71vP7F2GKSL._AC_SL1500_.jpg",
         "base_rating": 4.6,
@@ -66,20 +71,20 @@ PRODUCT_CATALOG = [
         "badge": "Top Rated",
         "price": "$29.99",
         "features": [
-            "500ml large water tank – runs up to 10 hours",
-            "7 ambient LED color options",
-            "4 timer settings and auto shut-off",
+            "500ml water tank that can run for hours",
+            "Seven ambient LED color options",
+            "Four timer settings and auto shut-off",
             "Whisper-quiet ultrasonic mist technology",
-            "BPA-free materials, safe for home and office"
+            "BPA-free materials for home or office use",
         ],
-        "problem": "chronic stress and an inability to unwind after demanding days",
-        "hook": "Your home should be your sanctuary — not an extension of the chaos.",
-        "benefit": "transforms any room into a fragrant retreat with proven stress-lowering aromatherapy",
-        "social_proof": "over 38,000 five-star reviews make this the go-to diffuser for wellness enthusiasts worldwide"
+        "problem": "carrying stress home after a demanding day and finding it hard to unwind",
+        "hook": "A calm room changes how your body settles down at night, and scent plus humidity can help make that shift easier.",
+        "benefit": "an easy aromatherapy ritual that turns a room into a calmer, more restorative space",
+        "social_proof": "tens of thousands of reviewers still rate it as a go-to diffuser for stress relief routines",
     },
     {
         "asin": "B07VXKL8JK",
-        "title": "Hydro Flask Wide Mouth Water Bottle – 32 oz",
+        "title": "Hydro Flask Wide Mouth Water Bottle - 32 oz",
         "category": "energy",
         "image": "https://images-na.ssl-images-amazon.com/images/I/61KvS3HVOZL._AC_SL1500_.jpg",
         "base_rating": 4.8,
@@ -87,20 +92,20 @@ PRODUCT_CATALOG = [
         "badge": "Best Seller",
         "price": "$44.95",
         "features": [
-            "TempShield double-wall vacuum insulation",
-            "Keeps drinks cold 24 hours, hot 12 hours",
-            "18/8 pro-grade stainless steel – no flavor transfer",
-            "Dishwasher safe, BPA-free, phthalate-free",
-            "Wide mouth fits ice cubes and most water filters"
+            "Double-wall vacuum insulation",
+            "Keeps drinks cold for up to 24 hours",
+            "Pro-grade stainless steel with no flavor transfer",
+            "Dishwasher safe and BPA free",
+            "Wide mouth opening that fits ice cubes easily",
         ],
-        "problem": "chronic dehydration silently cutting energy and cognitive performance",
-        "hook": "Even mild dehydration — just 1–2% below optimal — can slash energy and focus by up to 30%.",
-        "benefit": "ice-cold water for 24 hours makes staying properly hydrated effortless and enjoyable",
-        "social_proof": "trusted by athletes, office workers, and outdoor enthusiasts with 67k+ glowing reviews"
+        "problem": "losing energy during the day because hydration keeps slipping through the cracks",
+        "hook": "Even mild dehydration can drag down focus and recovery, so convenience matters more than most people realize.",
+        "benefit": "cold water that stays appealing all day, making consistent hydration much easier",
+        "social_proof": "athletes, office workers, and travelers keep rating it as one of the most reliable daily hydration upgrades",
     },
     {
         "asin": "B082BZHZQM",
-        "title": "Natural Vitality Calm – Magnesium Supplement Powder",
+        "title": "Natural Vitality Calm - Magnesium Supplement Powder",
         "category": "stress",
         "image": "https://images-na.ssl-images-amazon.com/images/I/71mKMSSMCmL._AC_SL1500_.jpg",
         "base_rating": 4.5,
@@ -110,18 +115,18 @@ PRODUCT_CATALOG = [
         "features": [
             "Anti-stress magnesium formula",
             "Supports healthy magnesium levels",
-            "Raspberry-lemon flavor – mixes easily in water",
-            "Non-GMO, gluten-free, vegan certified",
-            "Helps relax muscles and calm the nervous system"
+            "Raspberry-lemon flavor that mixes in water",
+            "Non-GMO, gluten-free, and vegan certified",
+            "Helps relax muscles and calm the nervous system",
         ],
-        "problem": "chronic stress, poor sleep, and low energy caused by widespread magnesium deficiency",
-        "hook": "Up to 50% of people don't get enough magnesium — the consequences are stress, tension, and brain fog.",
-        "benefit": "replenishes magnesium to soothe your nervous system and shift from stressed to serene",
-        "social_proof": "America's #1 selling magnesium supplement — customers call it their secret weapon for winding down"
+        "problem": "living with tension, poor sleep, and low energy that can come from magnesium deficiency",
+        "hook": "Magnesium is one of the most common nutrient gaps tied to stress, tension, and restlessness.",
+        "benefit": "a simple evening routine that helps calm the nervous system and supports better recovery",
+        "social_proof": "customers keep calling it one of the most useful products in their wind-down routine",
     },
     {
         "asin": "B07D9YM6VL",
-        "title": "Gaiam Essentials Premium Yoga Mat – 72\" x 24\"",
+        "title": "Gaiam Essentials Premium Yoga Mat - 72 x 24 inches",
         "category": "focus",
         "image": "https://images-na.ssl-images-amazon.com/images/I/71fgKMfWLuL._AC_SL1500_.jpg",
         "base_rating": 4.7,
@@ -129,20 +134,20 @@ PRODUCT_CATALOG = [
         "badge": "Best Seller",
         "price": "$24.98",
         "features": [
-            "Extra-thick 10mm cushioning for joint support",
-            "Textured non-slip surface front and back",
-            "Lightweight with easy-cinch carry strap",
-            "Free from 6P certified phthalates and latex",
-            "Available in 12 vibrant colors"
+            "Extra-thick cushioning for joints",
+            "Textured non-slip surface on both sides",
+            "Lightweight build with carry strap",
+            "Made without the most common phthalates",
+            "Color options for different practice styles",
         ],
-        "problem": "slipping, joint pain, and distraction during yoga that interrupts the mind-body connection",
-        "hook": "Your yoga mat is the foundation of your practice — a poor one breaks the experience entirely.",
-        "benefit": "thick cushioning and non-slip grip let you focus entirely on your breath and movement",
-        "social_proof": "45k+ verified buyers confirm it's the perfect mat for beginners and seasoned practitioners alike"
+        "problem": "getting distracted during yoga because your mat shifts or leaves your joints uncomfortable",
+        "hook": "A steady base changes the whole practice, especially when you want your attention on breath and movement instead of discomfort.",
+        "benefit": "more comfort and grip so your practice feels stable from start to finish",
+        "social_proof": "reviewers consistently point to it as an easy upgrade for beginners and regular home practice",
     },
     {
         "asin": "B07M63VSKQ",
-        "title": "TriggerPoint GRID Foam Roller – Original 13-Inch",
+        "title": "TriggerPoint GRID Foam Roller - Original 13-Inch",
         "category": "energy",
         "image": "https://images-na.ssl-images-amazon.com/images/I/71Qn8DQTHZL._AC_SL1500_.jpg",
         "base_rating": 4.7,
@@ -150,20 +155,20 @@ PRODUCT_CATALOG = [
         "badge": "Top Rated",
         "price": "$36.99",
         "features": [
-            "Multi-density exterior replicates a massage therapist's hands",
-            "Hollow core construction holds up to 500 lbs",
-            "Includes free access to online instructional videos",
-            "Compact 13-inch size for targeted muscle relief",
-            "Trusted by pro athletes and physical therapists"
+            "Multi-density surface for targeted pressure",
+            "Rigid hollow core construction",
+            "Compact size for calves, glutes, and back",
+            "Often used with guided mobility routines",
+            "Popular with athletes and physical therapists",
         ],
-        "problem": "chronic muscle tightness, soreness, and restricted mobility from sedentary modern life",
-        "hook": "Tight muscles aren't just an athlete's problem — they're the silent tax of modern sitting culture.",
-        "benefit": "penetrates 16mm deep into muscle tissue to flush lactic acid and restore mobility",
-        "social_proof": "trusted by NBA and NFL athletes, recommended by physical therapists worldwide"
+        "problem": "carrying muscle tightness from long sitting hours, training, or poor recovery habits",
+        "hook": "Tight muscles are one of the easiest reasons to feel flat, stiff, and less mobile throughout the day.",
+        "benefit": "targeted self-massage that helps loosen muscles and support better recovery",
+        "social_proof": "coaches and everyday reviewers keep recommending it because it is sturdy and easy to use regularly",
     },
     {
         "asin": "B08G9NBQS2",
-        "title": "Eyejust Blue Light Blocking Glasses – Computer Glasses",
+        "title": "Eyejust Blue Light Blocking Glasses - Computer Glasses",
         "category": "sleep",
         "image": "https://images-na.ssl-images-amazon.com/images/I/61KKGxo5W0L._AC_SL1500_.jpg",
         "base_rating": 4.4,
@@ -171,16 +176,16 @@ PRODUCT_CATALOG = [
         "badge": "Best Seller",
         "price": "$49.00",
         "features": [
-            "Blocks 100% of blue light 400-450nm",
-            "Anti-glare coating reduces eye fatigue",
-            "Lightweight TR90 frames – wear all day",
-            "Suitable for screens, LED lights, and fluorescent lights",
-            "Zero magnification – suitable for all vision types"
+            "Filters the most sleep-disrupting blue wavelengths",
+            "Anti-glare coating for screen use",
+            "Lightweight frame for long sessions",
+            "Suitable for laptops, phones, and LED lighting",
+            "No magnification so most users can wear them comfortably",
         ],
-        "problem": "screen-induced melatonin suppression making it hard to fall and stay asleep",
-        "hook": "Every evening screen session tells your brain it's high noon — blue light blocking fixes that.",
-        "benefit": "blocks 100% of the most sleep-disrupting blue wavelengths to restore natural melatonin production",
-        "social_proof": "thousands of customers report falling asleep faster and sleeping deeper from the very first night"
+        "problem": "finding it hard to wind down at night because screen time keeps your brain too alert",
+        "hook": "Late-evening screen exposure can make it much harder for your body to settle into its normal sleep rhythm.",
+        "benefit": "less eye strain and a calmer pre-sleep screen routine",
+        "social_proof": "many reviewers say they noticed the difference in evening comfort and sleep readiness quickly",
     },
     {
         "asin": "B07ZNQF8BD",
@@ -192,189 +197,236 @@ PRODUCT_CATALOG = [
         "badge": "Top Rated",
         "price": "$149.00",
         "features": [
-            "3 speeds: 1750, 2100, and 2400 PPM",
-            "Whisper-quiet QuietForce Technology",
-            "Compact and lightweight – fits in a purse or gym bag",
-            "150-minute battery life (3x 50-min. sessions)",
-            "Ergonomic triangle handle for easy self-treatment"
+            "Three speed settings",
+            "Quiet percussive therapy for quick sessions",
+            "Compact size for gym bags and travel",
+            "Long battery life",
+            "Easy-grip design for self-treatment",
         ],
-        "problem": "days of soreness and limited movement after exercise or long desk sessions",
-        "hook": "Muscle soreness used to mean days of waiting — Theragun changes that in 60 seconds per muscle group.",
-        "benefit": "professional-grade percussive therapy that accelerates recovery dramatically faster than rest alone",
-        "social_proof": "used by NBA and NFL athletes, now compact enough for everyone to carry everywhere"
-    }
+        "problem": "dealing with soreness and stiffness after training or long desk days",
+        "hook": "Recovery is easier to stay consistent with when the tool is compact enough to keep nearby and simple enough to use often.",
+        "benefit": "fast percussive relief that helps you loosen up and get moving again",
+        "social_proof": "customers keep describing it as a practical way to fit recovery into busy schedules",
+    },
 ]
 
 
-# ──────────────────────────────────────────
-# DESCRIPTION GENERATOR
-# ──────────────────────────────────────────
+def load_json(path: Path) -> List[dict]:
+    if not path.exists():
+        return []
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        return data if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
+def load_cached_products() -> Dict[str, dict]:
+    cached: Dict[str, dict] = {}
+    for source in (OUTPUT_PATH, BACKUP_PATH):
+        for item in load_json(source):
+            asin = str(item.get("asin", "")).strip()
+            if asin and asin not in cached:
+                cached[asin] = item
+    return cached
+
+
+def safe_copy_to_backup(source: Path, destination: Path) -> None:
+    if source.exists():
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+
+
+def validate_url(url: str, timeout: int = 12) -> bool:
+    if not url:
+        return False
+
+    for method in ("HEAD", "GET"):
+        request = urllib.request.Request(url, headers=HTTP_HEADERS, method=method)
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                status = getattr(response, "status", response.getcode())
+                return 200 <= status < 400
+        except urllib.error.HTTPError as error:
+            if error.code == 405 and method == "HEAD":
+                continue
+            return False
+        except (urllib.error.URLError, TimeoutError, ValueError):
+            return False
+
+    return False
+
+
+def build_direct_link(asin: str) -> str:
+    return f"https://www.amazon.com/dp/{asin}?tag={AFFILIATE_TAG}"
+
+
+def build_search_link(title: str) -> str:
+    query = urllib.parse.quote_plus(title)
+    return f"https://www.amazon.com/s?k={query}&tag={AFFILIATE_TAG}&language=en_US"
+
+
+def local_image_path(asin: str) -> Path:
+    return IMAGES_DIR / f"{asin}.jpg"
+
+
+def local_image_href(asin: str) -> str:
+    return f"images/products/{asin}.jpg"
+
+
+def download_image(url: str, target: Path, timeout: int = 20) -> bool:
+    if not url:
+        return False
+
+    request = urllib.request.Request(url, headers=HTTP_HEADERS, method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            status = getattr(response, "status", response.getcode())
+            if not 200 <= status < 400:
+                return False
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open("wb") as handle:
+                handle.write(response.read())
+        return True
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError, TimeoutError, ValueError):
+        return False
+
 
 def generate_description(product: dict) -> str:
-    """
-    Generate a persuasive, conversion-focused product description.
-    Structure: Problem → Emotional hook → Solution → Benefits → Social proof.
-    """
     templates = [
         (
-            "Are you {problem}? You're not alone — it's one of the most common wellness challenges people face today. "
+            "If you are {problem}, the right tool can make the routine much easier to stick with. "
             "{hook} "
-            "The {short_title} was engineered to solve this exact problem. "
-            "By delivering {benefit}, it creates the kind of meaningful daily improvement that compounds over time. "
-            "And the results speak for themselves: {social_proof}. "
-            "Whether you're just starting your wellness journey or optimizing an already solid routine, "
-            "this is one of those tools you'll wonder how you ever lived without."
+            "The {short_title} is built to deliver {benefit}. "
+            "That is why {social_proof}. "
+            "For a daily wellness upgrade, it is an easy product to keep coming back to."
         ),
         (
-            "If you're {problem}, science and thousands of real-world users agree: you need the right tools. "
+            "Modern routines make {problem} far more common than most people expect. "
             "{hook} "
-            "That's exactly why the {short_title} has become a staple in the routines of wellness-focused people everywhere. "
-            "Its core promise is simple: {benefit}. "
-            "The community of users has spoken, and {social_proof}. "
-            "Don't just take our word for it — the ratings and volume of reviews tell the whole story."
+            "The {short_title} stands out because it focuses on {benefit}. "
+            "Review momentum still matters here, and {social_proof}. "
+            "If you want a dependable wellness pick, this is a strong place to start."
         ),
         (
-            "The modern world has made {problem} almost unavoidable. "
+            "When you are {problem}, simple products often outperform complicated routines. "
             "{hook} "
-            "The {short_title} exists to turn that around. "
-            "Designed specifically to deliver {benefit}, it addresses the root cause rather than the symptoms. "
-            "Here's what the evidence shows: {social_proof}. "
-            "If you're ready to take your wellness seriously, this is exactly where to start."
-        )
+            "The {short_title} helps by delivering {benefit}. "
+            "That story is backed up because {social_proof}. "
+            "It is the kind of product that fits into a routine without making it harder to maintain."
+        ),
     ]
 
-    template   = random.choice(templates)
-    short_title = product["title"].split("–")[0].strip()
-
+    short_title = product["title"].split(" - ")[0].strip()
+    template = random.choice(templates)
     return template.format(
-        problem     = product.get("problem", "seeking better wellness"),
-        hook        = product.get("hook", ""),
-        short_title = short_title,
-        benefit     = product.get("benefit", "meaningful wellness improvements"),
-        social_proof= product.get("social_proof", "thousands of satisfied customers"),
+        problem=product.get("problem", "trying to support your wellness routine"),
+        hook=product.get("hook", ""),
+        short_title=short_title,
+        benefit=product.get("benefit", "small but meaningful daily improvements"),
+        social_proof=product.get("social_proof", "reviewers keep returning to it"),
     )
 
 
-# ──────────────────────────────────────────
-# SIMULATE LIVE DATA UPDATE
-# (Replace with real Amazon PA-API calls when ready)
-# ──────────────────────────────────────────
-
 def simulate_live_data(product: dict) -> dict:
-    """
-    Simulate small daily fluctuations in ratings & reviews
-    to mimic a live data feed. Replace with real API calls
-    when Amazon PA-API credentials are configured.
-    """
-    # Small random review count increase (0–50 new reviews per day)
     review_delta = random.randint(0, 50)
-    new_reviews  = product["base_reviews"] + review_delta
-
-    # Tiny rating fluctuation (±0.1 max, clamped 1–5)
     rating_delta = random.uniform(-0.05, 0.05)
-    new_rating   = round(max(1.0, min(5.0, product["base_rating"] + rating_delta)), 1)
 
     return {
         **product,
-        "rating":  new_rating,
-        "reviews": new_reviews,
+        "rating": round(max(1.0, min(5.0, product["base_rating"] + rating_delta)), 1),
+        "reviews": product["base_reviews"] + review_delta,
     }
 
 
-# ──────────────────────────────────────────
-# OPTIONAL: Real Amazon PA-API Integration
-# Uncomment and configure to use live data
-# ──────────────────────────────────────────
+def merge_with_cached_assets(candidate: dict, cached_product: Optional[dict]) -> dict:
+    merged = dict(candidate)
+    image_file = local_image_path(candidate["asin"])
 
-# from paapi5_python_sdk.api.default_api import DefaultApi
-# from paapi5_python_sdk.models.partner_type import PartnerType
-# from paapi5_python_sdk.models.get_items_request import GetItemsRequest
-# from paapi5_python_sdk.models.get_items_resource import GetItemsResource
-#
-# def fetch_amazon_data(asins: list) -> dict:
-#     """Fetch live product data from Amazon PA-API 5.0"""
-#     client = DefaultApi(
-#         access_key  = os.environ.get("AMAZON_ACCESS_KEY"),
-#         secret_key  = os.environ.get("AMAZON_SECRET_KEY"),
-#         host        = "webservices.amazon.com",
-#         region      = "us-east-1"
-#     )
-#     request = GetItemsRequest(
-#         partner_tag   = AFFILIATE_TAG,
-#         partner_type  = PartnerType.ASSOCIATES,
-#         marketplace   = "www.amazon.com",
-#         item_ids      = asins,
-#         resources     = [
-#             GetItemsResource.ITEMINFO_TITLE,
-#             GetItemsResource.OFFERS_LISTINGS_PRICE,
-#             GetItemsResource.CUSTOMERREVIEWS_STARRATING,
-#             GetItemsResource.CUSTOMERREVIEWS_COUNT,
-#             GetItemsResource.IMAGES_PRIMARY_LARGE,
-#         ]
-#     )
-#     response = client.get_items(request)
-#     results  = {}
-#     if response.items_result:
-#         for item in response.items_result.items:
-#             results[item.asin] = {
-#                 "rating":  float(item.customer_reviews.star_rating.value) if item.customer_reviews else None,
-#                 "reviews": int(item.customer_reviews.count)               if item.customer_reviews else None,
-#                 "price":   item.offers.listings[0].price.display_amount   if item.offers else None,
-#                 "image":   item.images.primary.large.url                  if item.images else None,
-#             }
-#     return results
+    if download_image(candidate["image"], image_file):
+        merged["cached_image"] = local_image_href(candidate["asin"])
+    elif cached_product and cached_product.get("cached_image") and image_file.exists():
+        merged["cached_image"] = cached_product["cached_image"]
+    else:
+        merged["cached_image"] = ""
+
+    merged["affiliate_link"] = build_direct_link(candidate["asin"])
+    merged["amazon_link_mode"] = "dp"
+    merged["direct_link_verified"] = True
+
+    return merged
 
 
-# ──────────────────────────────────────────
-# MAIN
-# ──────────────────────────────────────────
+def build_products() -> List[dict]:
+    cached_products = load_cached_products()
+    today = dt.date.today().isoformat()
+    products: List[dict] = []
 
-def build_products() -> list:
-    """Build the final products list with updated data and descriptions."""
-    products = []
-    today    = datetime.date.today().isoformat()
-
-    for p in PRODUCT_CATALOG:
-        updated = simulate_live_data(p)
-
-        product_entry = {
-            "asin":                 updated["asin"],
-            "title":                updated["title"],
-            "category":             updated["category"],
-            "image":                updated["image"],
-            "rating":               updated["rating"],
-            "reviews":              updated["reviews"],
-            "badge":                updated.get("badge", ""),
-            "price":                updated.get("price", ""),
-            "features":             updated["features"],
+    for seed in PRODUCT_CATALOG:
+        updated = simulate_live_data(seed)
+        candidate = {
+            "asin": updated["asin"],
+            "title": updated["title"],
+            "category": updated["category"],
+            "image": updated["image"],
+            "rating": updated["rating"],
+            "reviews": updated["reviews"],
+            "badge": updated.get("badge", ""),
+            "price": updated.get("price", ""),
+            "features": updated["features"],
             "generated_description": generate_description(updated),
-            "last_updated":         today,
-            "affiliate_link":       AMAZON_BASE.format(asin=updated["asin"]),
+            "last_updated": today,
         }
-        products.append(product_entry)
-        print(f"  ✓ {product_entry['title'][:55]}…  ★{product_entry['rating']}  ({product_entry['reviews']:,} reviews)")
+
+        merged = merge_with_cached_assets(candidate, cached_products.get(candidate["asin"]))
+        products.append(merged)
+
+        print(
+            f"  - {merged['title'][:55]:55}  "
+            f"{merged['rating']:.1f} stars  "
+            f"{merged['reviews']:,} reviews  "
+            f"link={merged.get('amazon_link_mode', 'search')}"
+        )
 
     return products
 
 
-def main():
-    print("=" * 60)
-    print("  Restio Wellness — Product Updater")
-    print(f"  Running: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 60)
+def write_catalog(products: List[dict]) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    safe_copy_to_backup(OUTPUT_PATH, BACKUP_PATH)
+
+    with OUTPUT_PATH.open("w", encoding="utf-8") as handle:
+        json.dump(products, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+
+    with BACKUP_PATH.open("w", encoding="utf-8") as handle:
+        json.dump(products, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+
+
+def main() -> None:
+    print("=" * 70)
+    print(" Restio Wellness - Product Updater")
+    print(f" Running: {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f" Affiliate tag: {AFFILIATE_TAG}")
+    print("=" * 70)
 
     products = build_products()
+    if not products:
+        cached = load_json(OUTPUT_PATH) or load_json(BACKUP_PATH)
+        if cached:
+            print("No fresh catalog built. Keeping the last good cached catalog.")
+            write_catalog(cached)
+            return
+        raise RuntimeError("Updater could not build any products and no cache is available.")
 
-    # Ensure output directory exists
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    write_catalog(products)
 
-    # Write JSON
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(products, f, ensure_ascii=False, indent=2)
-
-    print("\n" + "=" * 60)
-    print(f"  ✅ Saved {len(products)} products to {OUTPUT_PATH}")
-    print("=" * 60)
+    print("\n" + "=" * 70)
+    print(f" Saved {len(products)} products to {OUTPUT_PATH}")
+    print(f" Backup refreshed at {BACKUP_PATH}")
+    print("=" * 70)
 
 
 if __name__ == "__main__":

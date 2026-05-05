@@ -3,17 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title">All Wellness Products – Restio Wellness</title>
-  <meta name="description" id="page-description" content="Browse our full selection of curated wellness products for sleep, stress, energy, and focus. Honest reviews and real ratings.">
+  <title id="page-title">All Wellness Products - Restio Wellness</title>
+  <meta
+    name="description"
+    id="page-description"
+    content="Browse our full selection of curated wellness products for sleep, stress, energy, and focus. Honest reviews and real ratings."
+  >
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://restiowellness.com/category.html">
 
-  <meta property="og:type"  content="website">
-  <meta property="og:title" content="Shop Wellness Products – Restio Wellness">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Shop Wellness Products - Restio Wellness">
   <meta property="og:image" content="https://restiowellness.com/images/og-image.jpg">
 
   <link rel="icon" type="image/svg+xml" href="images/logo.svg">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/fixes.css">
 
   <script type="application/ld+json">
   {
@@ -22,7 +27,11 @@
     "name": "Wellness Products",
     "url": "https://restiowellness.com/category.html",
     "description": "Curated wellness products for sleep, stress, energy, and focus.",
-    "publisher": { "@type": "Organization", "name": "Restio Wellness", "url": "https://restiowellness.com" }
+    "publisher": {
+      "@type": "Organization",
+      "name": "Restio Wellness",
+      "url": "https://restiowellness.com"
+    }
   }
   </script>
 </head>
@@ -44,7 +53,7 @@
       </div>
       <a href="category.html" class="nav-cta">Shop All</a>
     </nav>
-    <button class="hamburger" aria-label="Open menu">
+    <button class="hamburger" aria-label="Open menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
   </div>
@@ -53,7 +62,7 @@
 <nav class="mobile-menu">
   <div class="mobile-menu-header">
     <img src="images/logo.svg" alt="Restio Wellness" height="36">
-    <button class="mobile-menu-close">✕</button>
+    <button class="mobile-menu-close">x</button>
   </div>
   <div class="mobile-nav-links">
     <a href="index.html">Home</a>
@@ -66,12 +75,11 @@
   </div>
 </nav>
 
-<!-- ─── Category Hero ─── -->
 <section class="category-hero">
   <div class="container container--narrow">
     <div class="breadcrumb">
       <a href="index.html">Home</a>
-      <span>›</span>
+      <span>&rsaquo;</span>
       <span id="breadcrumb-current">All Products</span>
     </div>
     <h1 id="category-headline">All Wellness Products</h1>
@@ -81,36 +89,30 @@
   </div>
 </section>
 
-<!-- ─── Filter Bar ─── -->
 <div style="background:white;border-bottom:1px solid var(--beige-mid);position:sticky;top:73px;z-index:50">
   <div class="container">
     <div class="filter-bar" id="filter-bar">
       <button class="filter-btn active" data-filter="all">All</button>
-      <button class="filter-btn" data-filter="sleep">🌙 Sleep</button>
-      <button class="filter-btn" data-filter="stress">🌿 Stress</button>
-      <button class="filter-btn" data-filter="energy">⚡ Energy</button>
-      <button class="filter-btn" data-filter="focus">🧠 Focus</button>
+      <button class="filter-btn" data-filter="sleep">Sleep</button>
+      <button class="filter-btn" data-filter="stress">Stress</button>
+      <button class="filter-btn" data-filter="energy">Energy</button>
+      <button class="filter-btn" data-filter="focus">Focus</button>
     </div>
   </div>
 </div>
 
-<!-- ─── Products Grid ─── -->
 <section>
   <div class="container">
-    <!-- Results count -->
     <p id="results-count" style="font-size:0.85rem;color:var(--gray-mid);margin-bottom:24px"></p>
 
-    <!-- AdSense -->
     <div class="adsense-slot">
-      <!-- Google AdSense — Insert your ad code here -->
-      Ad Slot — Google AdSense
+      Ad Slot - Google AdSense
     </div>
 
-    <div class="products-grid" id="products-grid"></div>
+    <div class="products-grid" id="products-grid" data-page-managed="category"></div>
 
-    <!-- Empty state -->
     <div id="empty-state" style="display:none;text-align:center;padding:80px 0">
-      <div style="font-size:3rem;margin-bottom:16px">🌿</div>
+      <div style="font-size:3rem;margin-bottom:16px">?</div>
       <h3>No products found</h3>
       <p style="margin:12px 0 24px">Try a different category or browse all products.</p>
       <button class="btn btn-secondary" onclick="setFilter('all')">Show All Products</button>
@@ -118,7 +120,6 @@
   </div>
 </section>
 
-<!-- ─── Footer ─── -->
 <footer class="site-footer">
   <div class="container">
     <div class="footer-grid">
@@ -155,7 +156,7 @@
     </div>
     <div class="footer-bottom">
       <p class="footer-disclaimer">Restio Wellness is a participant in the Amazon Services LLC Associates Program. As an Amazon Associate we earn from qualifying purchases.</p>
-      <p class="footer-copy">© 2025 Restio Wellness. All rights reserved.</p>
+      <p class="footer-copy">&copy; 2025 Restio Wellness. All rights reserved.</p>
     </div>
   </div>
 </footer>
@@ -172,119 +173,107 @@
 
 <script src="js/main.js"></script>
 <script>
-/* ── Category page logic ── */
-const AFFILIATE_TAG = 'restio-20';
-let allProducts = [];
-let currentFilter = 'all';
+(() => {
+  const ProductCatalog = window.RestioProducts || {};
+  const categoryMeta = {
+    sleep: {
+      title: "Best Sleep Products",
+      subtitle: "Tools and supplements to help you sleep deeper, longer, and wake up truly refreshed."
+    },
+    stress: {
+      title: "Best Stress Relief Products",
+      subtitle: "Evidence-backed tools to calm your nervous system and restore your sense of calm."
+    },
+    energy: {
+      title: "Best Energy Products",
+      subtitle: "Hydration, recovery, and movement essentials to keep you energized throughout the day."
+    },
+    focus: {
+      title: "Best Focus and Mind Products",
+      subtitle: "Yoga, mindfulness, and cognitive tools to sharpen focus and deepen your practice."
+    },
+    all: {
+      title: "All Wellness Products",
+      subtitle: "Curated picks with verified reviews across every wellness category."
+    }
+  };
 
-const categoryMeta = {
-  sleep:  { title: 'Best Sleep Products',       subtitle: 'Tools and supplements to help you sleep deeper, longer, and wake up truly refreshed.' },
-  stress: { title: 'Best Stress Relief Products', subtitle: 'Evidence-backed tools to calm your nervous system and restore your sense of calm.' },
-  energy: { title: 'Best Energy Products',       subtitle: 'Hydration, recovery, and movement essentials to keep you energized throughout the day.' },
-  focus:  { title: 'Best Focus & Mind Products', subtitle: 'Yoga, mindfulness, and cognitive tools to sharpen focus and deepen your practice.' },
-  all:    { title: 'All Wellness Products',       subtitle: 'Curated picks with verified reviews across every wellness category.' }
-};
+  let allProducts = [];
 
-function buildAmazonLink(asin) {
-  return `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAG}`;
-}
+  function renderProducts(products) {
+    const grid = document.getElementById("products-grid");
+    const emptyState = document.getElementById("empty-state");
+    const resultsCount = document.getElementById("results-count");
 
-function buildStarsHTML(rating) {
-  const full = Math.floor(rating), half = rating % 1 >= 0.5, empty = 5 - full - (half ? 1 : 0);
-  let h = '<span class="stars">';
-  for (let i = 0; i < full;  i++) h += '<span class="star">★</span>';
-  if (half) h += '<span class="star">⭒</span>';
-  for (let i = 0; i < empty; i++) h += '<span class="star empty">★</span>';
-  return h + '</span>';
-}
+    if (!grid || !emptyState || !resultsCount) {
+      return;
+    }
 
-function formatN(n) { return n >= 1000 ? (n/1000).toFixed(1).replace(/\.0$/,'')+'k' : n; }
+    if (!products.length) {
+      grid.innerHTML = "";
+      emptyState.style.display = "block";
+      resultsCount.textContent = "";
+      return;
+    }
 
-function renderProducts(products) {
-  const grid  = document.getElementById('products-grid');
-  const empty = document.getElementById('empty-state');
-  const count = document.getElementById('results-count');
-
-  if (!products.length) {
-    grid.innerHTML = '';
-    empty.style.display = 'block';
-    count.textContent = '';
-    return;
+    emptyState.style.display = "none";
+    resultsCount.textContent = `Showing ${products.length} product${products.length === 1 ? "" : "s"}`;
+    grid.innerHTML = products.map(ProductCatalog.buildProductCard).join("");
+    ProductCatalog.enhanceDynamicContent?.(grid);
   }
-  empty.style.display = 'none';
-  count.textContent = `Showing ${products.length} product${products.length !== 1 ? 's' : ''}`;
 
-  grid.innerHTML = products.map(p => {
-    const link    = `product.html?asin=${p.asin}`;
-    const amzLink = buildAmazonLink(p.asin);
-    const badge   = p.badge ? `<span class="badge ${p.badge==='Best Seller'?'badge-bestseller':'badge-toprated'}">${p.badge}</span>` : '';
-    return `
-    <article class="product-card fade-in" data-category="${p.category}">
-      <div class="product-image-wrap">
-        <a href="${link}"><img src="${p.image}" alt="${p.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x300/E8F0E0/6B9E6B?text=Product'"></a>
-        <div class="product-badge">${badge}</div>
-      </div>
-      <div class="product-body">
-        <span class="product-category">${p.category}</span>
-        <h2 class="product-title" style="font-size:1.1rem"><a href="${link}">${p.title}</a></h2>
-        <div class="product-rating">
-          ${buildStarsHTML(p.rating)}
-          <span class="rating-number">${p.rating}</span>
-          <span class="rating-count">(${formatN(p.reviews)} reviews)</span>
-        </div>
-        ${p.price ? `<div class="product-price">${p.price}</div>` : ''}
-        <div class="product-card-actions">
-          <a href="${link}" class="btn-view-detail">Details</a>
-          <a href="${amzLink}" class="btn-amazon-card" rel="nofollow sponsored" target="_blank">Amazon →</a>
-        </div>
-      </div>
-    </article>`;
-  }).join('');
-  initFadeIn();
-}
+  function setFilter(filter) {
+    document.querySelectorAll(".filter-btn").forEach((button) => {
+      button.classList.toggle("active", button.dataset.filter === filter);
+    });
 
-function setFilter(filter) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.filter === filter);
+    const meta = categoryMeta[filter] || categoryMeta.all;
+    document.getElementById("category-headline").textContent = meta.title;
+    document.getElementById("category-subtitle").textContent = meta.subtitle;
+    document.getElementById("breadcrumb-current").textContent =
+      filter === "all" ? "All Products" : meta.title;
+    document.getElementById("page-title").textContent = `${meta.title} - Restio Wellness`;
+    document.getElementById("page-description").content = meta.subtitle;
+
+    const filteredProducts =
+      filter === "all"
+        ? allProducts
+        : allProducts.filter((product) => product.category === filter);
+
+    renderProducts(filteredProducts);
+  }
+
+  window.setFilter = setFilter;
+
+  document.querySelectorAll(".filter-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter || "all";
+      const nextUrl =
+        filter === "all"
+          ? "category.html"
+          : `category.html?category=${encodeURIComponent(filter)}`;
+      window.history.replaceState({}, "", nextUrl);
+      setFilter(filter);
+    });
   });
 
-  const meta = categoryMeta[filter] || categoryMeta.all;
-  document.getElementById('category-headline').textContent   = meta.title;
-  document.getElementById('category-subtitle').textContent   = meta.subtitle;
-  document.getElementById('breadcrumb-current').textContent  = filter === 'all' ? 'All Products' : meta.title;
-  document.getElementById('page-title').textContent          = `${meta.title} – Restio Wellness`;
-  document.getElementById('page-description').content        = meta.subtitle;
+  const params = new URLSearchParams(window.location.search);
+  const urlCategory = params.get("category") || "all";
 
-  const filtered = filter === 'all' ? allProducts : allProducts.filter(p => p.category === filter);
-  renderProducts(filtered);
-}
-
-window.setFilter = setFilter;
-
-// Init filter buttons
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => setFilter(btn.dataset.filter));
-});
-
-// Read URL param
-const params = new URLSearchParams(window.location.search);
-const urlCat = params.get('category') || 'all';
-
-// Load products
-fetch('/data/products.json')
-  .then(r => r.json())
-  .then(data => {
-    allProducts = data;
-    setFilter(urlCat);
-
-    // Set active filter button
-    const btn = document.querySelector(`.filter-btn[data-filter="${urlCat}"]`);
-    if (btn) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
-  })
-  .catch(() => {
-    document.getElementById('products-grid').innerHTML = '<p style="color:var(--gray-mid);text-align:center;padding:40px">Error loading products.</p>';
-  });
+  ProductCatalog.loadProductCatalog()
+    .then((products) => {
+      allProducts = products;
+      setFilter(urlCategory);
+    })
+    .catch((error) => {
+      console.error("Category page load error:", error);
+      const grid = document.getElementById("products-grid");
+      if (grid) {
+        grid.innerHTML =
+          '<p style="color:var(--gray-mid);text-align:center;padding:40px">Error loading products.</p>';
+      }
+    });
+})();
 </script>
 </body>
 </html>
