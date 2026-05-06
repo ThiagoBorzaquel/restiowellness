@@ -4,14 +4,14 @@
   <!-- Core Pages -->
   <url>
     <loc>https://restiowellness.com/</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/category.html</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -19,28 +19,28 @@
   <!-- Category Pages -->
   <url>
     <loc>https://restiowellness.com/category.html?category=sleep</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/category.html?category=stress</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/category.html?category=energy</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/category.html?category=focus</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -48,56 +48,56 @@
   <!-- Product Pages -->
   <url>
     <loc>https://restiowellness.com/product.html?asin=B07X3X7X5K</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/product.html?asin=B08HJXS7VM</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/product.html?asin=B07VXKL8JK</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/product.html?asin=B082BZHZQM</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/product.html?asin=B07D9YM6VL</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/product.html?asin=B07M63VSKQ</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/product.html?asin=B08G9NBQS2</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/product.html?asin=B07ZNQF8BD</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -105,14 +105,14 @@
   <!-- Company Pages -->
   <url>
     <loc>https://restiowellness.com/about.html</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/contact.html</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -120,21 +120,21 @@
   <!-- Legal Pages -->
   <url>
     <loc>https://restiowellness.com/privacy-policy.html</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/terms.html</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://restiowellness.com/cookies.html</loc>
-    <lastmod>2025-01-01</lastmod>
+    <lastmod>2026-05-06</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
